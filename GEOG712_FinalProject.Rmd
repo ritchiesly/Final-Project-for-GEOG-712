@@ -1,0 +1,197 @@
+---
+title: "Pre-Column Chemical Derivatization of Phospholipids to Permanently Fix a Positive Charge for Multiplexed Analysis by Nonaqueous Capillary Electrophoresis Mass Spectrometry"
+author: "Ritchie Ly"
+date: "18/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(waffle)
+library(dplyr)
+library(ggplot2)
+
+library(knitr)
+library(kableExtra)
+
+library(OrgMassSpecR)
+```
+
+## Abstract
+
+Current methods for comprehensive analysis of lipids (i.e., lipidomics) are limited by low sample throughput and poor data fidelity while not being applicable to large-scale epidemiological studies. Herein, we introduce a high-throughput screening platform for comprehensive analysis of intact serum lipids when using multisegment injection-non-aqueous capillary electrophoresis-mass spectrometry (MSI-NACE-MS) that is ideal for analysis of volume-restricted biological samples, such as dried blood spots. A new pre-column methylation derivatization utilizing methyl-1-(p-tolyl) triazene (MTT) was developed in order to improve the electrophoretic separation and detectability of major classes of zwitterionic phospholipids in serum such as phosphatidylcholines (PC).  Serial injection of seven discrete serum extract samples within a single run by MSI-NACE-MS was achieved when using an optimal non-aqueous background electrolyte under positive ion mode detection with full-scan data acquisition. In this case, untargeted screening of intact lipids from reconstituted methyl-tert-butyl ether (MTBE) extracts identified over 60 unique phospholipids from standardized human serum samples. Furthermore, an electrophoretic linear regression model was used to facilitate identification of serum lipids based on their characteristic chain-length and degrees of unsaturation, whereas high resolution tandem mass spectrometry was applied to confirm lipid class based on fragmentation of their head-group. Overall, this work greatly expands metabolome coverage in CE-MS for analysis of small volumes of bio-banked blood specimens, which will allow for the discovery of novel biomarkers for early detection of human diseases, including asymptomatic newborns affected with cystic fibrosis.
+
+```{table, include=FALSE}
+data(tester)
+kable(tester, "latex")
+```
+
+## Introduction
+
+Lipidomics, a subset of metabolomics, is a field in recent years that has gained notoriety, especially due to its close linkage to perturbations in human health. Over 100 different inborn errors of metabolism (IEMs) have been associated with abnormal lipid metabolism such as peroxisomal disorders, fatty acid oxidation defects and cholesterol biosynthesis pathways disorders. Currently, there are over 38,000 lipids that have been documented according to the LipidMaps database. Phospholipids, which comprise the majority of reported lipid species, play various notable biological roles and are promising candidates to evaluate as potential biomarkers due to their possible implications in disease states. Since they vary in structure, polarity, stereochemistry and natural abundance, there is a need for platforms with versatile coverage that also meet the throughput demands required for epidemiological studies involving these metabolites. 
+
+```{r phospholipid_breakdown, echo=FALSE}
+
+phospholipid_breakdown <- c(
+  `Phospholipids` = 95,`Steroids` = 3,`FattyAcids` = 2,`Sphingolipids` = 0.1)
+
+waffle(phospholipid_breakdown, rows = 10,
+       colors = c()
+       )
+```
+
+Currently, reverse-phase liquid chromatography (RP-LC) and hydrophilic interaction chromatography (HILIC) separations hyphenated with mass spectrometry (MS) are predominately used for phospholipid separations. Multidimensional separation techniques also show promise for comprehensive analyses of lipids but require expensive infrastructure and longer analysis times (> 25 min) which deter from this platform’s widespread usage in metabolomics. In recent years, supercritical fluid chromatography (SFC) has increased in popularity due to its ability to provide unique separations by making use of the diverse physicochemical properties of supercritical fluids as mobile phases. Similarly, to multidimensional chromatography, the adoption rates for SFC have been hindered due to its high maintenance and costs.Han and Gross introduced direction-injection mass spectrometry (DI-MS) as a lipidomics approach, more commonly referred to as “shotgun lipidomics”, whereby a lipid extract is directly injected into an electrospray ionization source (ESI) coupled to a mass spectrometer. While essentially instantaneous and involving minimal sample preparation, absolute quantification of all lipid species can prove to be difficult and precise measurements can only be made when stable isotope internal standards are added prior to lipid extraction. This is further complicated by the wide discrepancy in ionization efficiencies across varying lipid classes that may contribute or suffer from signal suppression.
+
+Inevitably, this diversity yields lipids belonging to different subclasses being isobaric. Poor ionization efficiency and instrument response is also a concern for low abundance phospholipids due to their zwitterionic nature. Attempts to derivatize phospholipids as a means of providing unambiguous phospholipids subclass identifications and enhanced sensitivity are promising but are predominantly used for improving shotgun techniques. One approach uses diazomethane for methylation of phosphoric acids, carboxylic acids and primary amines, in effect generating phospholipids that are fixed cations. Trimethylation enhancement by diazomethane (TrEnDi) demonstrates dramatically improved sensitivity by MS detection using ESI with quantitative transformations of phospholipids to their derivatized analogues. The Smith group also took into account addition considerations by ensuring correct subclass identification using 13C labelled diazomethane.11 However, this method is not amenable for larger based studies as diazomethane chemistry requires several burdensome safety precautions to be considered throughout synthesis and handling of the reagent. Thus, an alternative reagent would be highly sought after.
+
+A recent study by Furukawa et al. involving the analysis of oxidized lipids made a surprising discovery where it is demonstrated for the first time 3-methyl-1-p-toyltraizene (MTT) is used as an agent for mediating the methylation of phosphoric acid moieties. Unfortunately, the effective yield of this reaction remains unknown as the study did not report a yield nor elucidate a plausible mechanism for this chemical derivatization.
+
+In this study, we further investigated the viability of using MTT as a reagent that can reproducibly enhance sensitivity of phospholipid by ESI-MS, given that the protocol is safer, inexpensive and relatively quick. Furthermore, derivatization of phospholipids such that they are fixed with a cationic charge, which will enhance separation efficiency of these species, resolving metabolites from the neutral EOF region necessary for accurate quantification without the use of spiked deuterated internal standards for each analyte of interest, which for phospholipids tend to cost upwards of **$1000** each. Lastly, separation from the neutral EOF window enables features (metabolites) to be detected that may otherwise fall below the detection limit as a result of strong ion suppression.
+
+## Experimental
+
+### Reagents and Chemicals
+
+Sheath liquid and background electrolyte (BGE) were prepared with Ultra LC-MS grade methanol (Caledon), 2-propanol (Caledon) and Ultra LC-MS grade acetonitrile (Caledon). Ammonium acetate, ammonium formate, melatonin, methyl-tert-butyl ether, 3-methyl-1-p-toyltriazene, standard human serum was purchased from Sigma-Aldrich (Canada and USA). Phospholipid stocks and deuterated internal standards (D-IS) were purchased from Avanti Lipids. All lipid standards were prepared in chloroform. All other standards, including melatonin were prepared in methanol. All standards were prepared in GC vials to avoid long-term leaching of plasticizers and stored at -80°C.
+
+### MTBE Extraction Protocol for Biofluids and Dried Blood Spots
+
+Preparation of biological samples prior to analysis were carried out using a MTBE based extraction protocol used an optimized protocol outlined in Azab et al. Extractions were performed in glass vials and pipette tips pre-rinsed with dichloromethane and methanol, respectively. To a 50 µL serum sample, 100 µL of 0.01% v/v butylated hydroxytoluene (BHT) in methanol was added, with BHT acting as an antioxidant to prevent degradation of labile polyunsaturated lipids during sample processing/storage. Next, 250 µL of MTBE and 12.5 µL of 1M HCl were added to the mixture followed by vigorous shaking for 30 min at room temperature. Phase separation was induced by the addition 100 µL of deionized water. Samples are then centrifuged at 3000 g at 4°C for 30 min to collect and sediment protein at the bottom of the vial for easy transfer of the biphasic layers. MTBE fractions are evaporated down to dryness using a gentle stream of nitrogen. Samples are stored dried and frozen at -80°C and reconstituted in BGE with internal standards and melatonin as an EOF marker prior to analysis.
+
+### MTT Reaction Protocol
+
+Phospholipid methylation reactions with MTT were performed in glass GC vials pre-rinsed with dichloromethane. Pipette tips were pre-rinsed with methanol to remove plasticizers that may leach into samples. Stock solutions of MTT at various concentrations were dissolved in MTBE. Reactions were conducted on a standard mixture of a single phospholipid subclass (ie. PC, PE or SM), on a single phospholipid standard, or human serum purchased from Sigma Aldrich. Melatonin was added as an EOF marker during sample pre-processing and deuterated internal standards were added after the reaction had occurred. After MTT was added to each vial, samples were sealed using Teflon tape and vortexed for 30s to ensure homogeneity. The vials were then placed into a GC oven at specified temperatures over various durations of time. Immediately after reactions were finished, samples were dried under a gentle stream of nitrogen at room temperature and either stored frozen at -80oC or reconstituted in BGE for analysis.
+
+### Instrumentation
+
+Analysis by MSI-NACE-MS follows similar protocols as outlined in Azab et al. For initial experiments, an Agilent 6230 time-of-flight (ToF) mass spectrometer with an electrospray ionization (ESI) source equipped with an Agilent G7100A CE unit (Agilent Technologies Inc., Mississauga, ON, Canada.) was used. An Agilent 1260 Infinity isocratic pump with a 1260 Infinity degasser were applied to deliver sheath liquid at a flow rate of 10 µL/min using a CE-MS coaxial sheath liquid interface kit. For real-time mass correction, reference ions purine an hexakis (2,2,3,3-tetrafluoropropoxy)-phosphazine (HP-921) were spiked into the 80% methanol sheath liquid at 0.02% v/v to provide constant mass signals at m/z 121.0509 and m/z 922.0098 respectively, which are also used to monitor for potential ion suppression/enhancement effects during separation. For later experiments, an Agilent 6550 quadrupole-time-of-flight (QToF) mass spectrometry system is used with an Agilent G7100A capillary electrophoresis (CE) unit. Separations were performed with 30 kV applied voltage at 25°C using uncoated fused-silica capillaries (Polymicro Technologies Inc., AZ) with a 50 µm inner diameter and a total length of 110 cm. A capillary window maker (MicroSolv, Leland, NC) was used to remove about 7 mm of the polyimide coatings on both ends of the capillary followed by cleaning excess residue with methanol. Prior to first use, capillaries were conditioned by flushing for 15 min at 950 mbar of methanol, water and 1M NaOH followed by a 30 min flush of BGE. A BGE consisting of 70% acetonitrile, 15% methanol and 5% 2-propanol and 10% formic acid with 35 mM ammonium formate (apparent pH = 2.2). Newly prepared BGE and sheath liquid was degassed before use. Multiplexed separations were performed based on a serial hydrodynamic injection alternating between a 5s injection of a sample and a 40s injection of BGE for a total of seven discrete sample injections analyzed within a single run. The ToF-MS system was operated as a full scan MS in 2 GHz extended dynamic range acquisition mode with a mass range of m/z 50-1700 and a scan rate of 1 Hz. The ESI source conditions were as follows: dry gas temperature = 300°C, nebulizer = 4 psi, dry gas flow rate = 4 L/min, Vcap = 3500V, fragmentor = 120V and Oct 1 RF = 360V. The QToF-MS was operated as a full scan MS in 4 GHz Hi-Res acquisition mode with a mass range of m/z 50-1700 and a scan rate of 1 Hz. The ESI source conditions were as follows: dry gas temperature = 250°C, nebulizer = 4 psi, dry gas flow rate = 11 L/min, Vcap at 3500V, fragmentor = 380V, Oct 1 RF = 750V. The nebulizer was turned off during preconditioning and injection sequences and turned on one minute into electrophoresis. Targeted MS/MS experiments were performed using the QToF-MS system by a single injection of a sample with higher pressure (100 mbar) applied during analysis. MS/MS experiments were conducted at various fragmentor voltages (10, 20 and 40V) to collect different fragmentation profiles.
+
+## Results and Discussion
+
+### Methylation Reaction Optimization by Design of Experiment
+
+Given that the methylating properties of MTT were a serendipitous discovery by Furukawa et al., the yield was not further investigated in their study. For this, a statistical approach was carried out with the goal of maximizing the overall yield of the reaction. A Box-Benkhen experimental design summarized in tables below was used at three factors over 15 different experiments at varying levels with three repeated experiments at the center conditions to assess reproducibility. The ranges of the reaction were selected based on stability of analysis using NACE-MS, compatibility with the solvent MTBE and reaction times suitable for large scale studies. These were determined by preliminary experiments conducted prior to performing the design of experiment.
+
+| Levels              |      |    |     |     |
+|---------------------|------|----|-----|-----|
+| Factors             | Code | -1 | 0   | 1   |
+| MTT Concentration   | X1   | 50 | 250 | 450 |
+| Temperature (°C)    | X2   | 60 | 90  | 120 |
+| Reaction time (min) | X3   | 30 | 75  | 120 |
+
+| Experiment | X1  | X2  | X3  |
+|------------|-----|-----|-----|
+| 1          | 50  | 60  | 75  |
+| 2          | 450 | 60  | 75  |
+| 3          | 50  | 120 | 75  |
+| 4          | 450 | 120 | 75  |
+| 5          | 50  | 90  | 30  |
+| 6          | 450 | 90  | 30  |
+| 7          | 50  | 90  | 120 |
+| 8          | 450 | 90  | 120 |
+| 9          | 250 | 60  | 30  |
+| 10         | 250 | 120 | 30  |
+| 11         | 250 | 60  | 120 |
+| 12         | 250 | 120 | 120 |
+| 13         | 250 | 90  | 75  |
+| 14         | 250 | 90  | 75  |
+| 15         | 250 | 90  | 75  |
+
+From the main effects plot seen above, it is evident that the MTT concentration significantly improves the overall yield while increasing the other two factors results in a decrease in yield. Interestingly, increasing the MTT concentration does not show a plateaued response suggesting that an optimum could be found at higher MTT concentrations. Looking to the reaction temperature, the trend still shows but in the opposite direction in which lower temperatures may produce higher yields.
+
+```{r electropherogram, echo=FALSE}
+data("electropherogram2")
+
+EIE <- DrawChromatogram(electropherogram2$time,
+                        electropherogram2$intensity/100,
+                        range = list(start = 17.3, stop = 21.6),
+                        main = "Extracted Electropherogram of Isomers: Leucine and Isoleucine",
+                        xlab = "Migration Time in minutes",
+                        ylab = "Ion Count x 100")
+```
+
+When looking to the interactions between the various factors, the center point reaction generally works to maximize the responses. A higher concentration of MTT at lower reaction temperatures using the center point reaction time (~75 min) provides the best response. Interestingly, the interaction between the concentration of MTT and the reaction time seem to show some slight variations in optimal responses. The green trace, which is representative of a longer reaction time, skews slightly to the right which suggests that the combination of a longer reaction time with higher MTT concentrations would produce the best result given those conditions. Oppositely, a lower concentration of MTT is more favourable at a lower reaction time. However, the center point will provide the most optimal condition in terms of increased yields which holds true in the other interaction graphs.
+
+## Proposed Mechanism of Reaction
+
+Furukawa et al. first reported the methylation properties of MTT for the purpose of methylating free carboxylic acids of lipid aldehydes to be used in conventional tandem mass spectrometry analysis. However, this is the first time that MTT has been reported to have the capability of methylating phosphoric acids and was then used in that context as an additional tool to quickly discriminate between phospholipids and other classes of lipids with characteristic fragments. As a result, we propose the following mechanism as seen in the Figure given the products that were detected in NACE-MS after samples undergo MTT mediated treatment. In short, MTT is first protonated to increase the electrophilic character of the amino group. This allows phosphoric acid to act as a nucleophile, abstracting the methyl group. The derivatized PC undergoes a proton transfer to neutralize the positive charge, forming an p-tolyl-triazine cation that is stabilized by its high conjugation.
+
+## Untargeted Lipid Screening Using Signal Pattern Recognition
+
+MSI-NACE-MS provides a unique platform as an alternative to other chromatographic separation techniques for untargeted intact lipid screening. Customized dilution patterns aim to accelerate and simplify data workflows. In this context, a combination of both dilution trend filter and temporal signal pattern recognition worked towards building a mass list of cationic lipids. Initially, dilution trend filtering with MzMine software was used as a first filter to facilitate feature identification with a visual cue and was used to evaluate over 6000 features for their authenticity based on several exclusion criteria, effectively reducing the list to 60 features.
+
+Additionally, MSI was applied using a different signal pattern to supplement lipid subclass identification. In this context, sample injections were performed where two injections in a unique dilution pattern are applied to standard mixtures of a purified phospholipid subclass with a single injection dedicated to a composite human serum sample. Following this workflow, tentative intact lipid features previously identified using dilution trend filtering and MzMine can be categorized to their respective subclass. An example of this can be seen in Figure 8 when extracting m/z 544.3398. The EIE indicates two signals whose relative peak areas are in a 1:2 dilution ratio and elute first from the capillary, thus belonging to the PC standard mixture injections. The third injection corresponds to the composite serum sample. Thus, this signal pattern supplements the categorization of the feature being categorize to the PC subclass which was then tentatively identified as PC (20:4). Likewise, extracting m/z 502.2928 displayed an EIE where a single signal migrated prior to two subsequent signals with RPAs in a 2:1 dilution ratio.
+
+Based on this injection pattern, m/z 544.3398 was tentatively identified as a PE. Cross referencing the m/z 502.2927 to LMSD identifies this feature as PE (20:4). By this approach, over 60 compounds were given presumptive IDs and summarized in Table S1. Unfortunately, cases were encountered where lipid classification was not possible. Unfortunately, cases were encountered where lipid classification was not possible. For instance, when extracting m/z 730.5381, the EIE indicates isobaric PC and PE compounds, suggesting that if a feature with m/z 730.5381 was identified in the composite serum sample, it could not be distinguished or assigned to either class due to this ambiguity Figure 9. For these aforementioned cases, confirmatory MS/MS experiments can distinguish these intact lipids-based on their head group chemistry or migration time. Furthermore, it should be noted that if a feature is identified in both the serum and within one of the phospholipid standard mixtures, it should not be interpreted as a definitive identification, since there is still the possibility for isobaric interference (lipids belonging to different classes with identical m/z). Nevertheless, this technique is an extremely useful screening tool that saves time by providing confidence in phospholipid subclass identification prior to the use of MS/MS.
+
+## Electromigration Modelling as A Supplemental Tool for Headgroup Identification
+
+Previously, we demonstrated utilizing electromigration models to elucidate the relationship between electrophoretic mobility and degrees of unsaturated amongst a series of polyunsaturated fatty acids (PFAs). Within the acidic buffer conditions used in NACE-MS positive mode (pH ~ 2.2), it is assumed that all PCs exist in the same ionized state due to their similarities in pKa, thus differing solely by size. Since electrophoretic mobility is majorly influenced by hydrated radius and charge, this intrinsic property can be used to better predict the structure differences between PC analytes. As seen in Figure 10 the electrophoretic mobility of approximately 38 tentatively identified PC species were plotted as a function of their m/z with a strong linear correlation (R2 = 0.975). 
+
+In this mode, the range of PCs from feature m/z 496.3398 to 836.6164. Evidently, there are two families clearly seen in the graph. Smaller mono-acylated PCs are shown to migrate faster during positive mode NACE separations as a result of their more compact size and smaller hydrodynamic radius (also indicated by larger electrophoretic mobility values). Differences in electrophoretic mobility within each group, such as the mono-acyl and diacyl-chained phosphatidylcholines were presumed to reflect the structural changes such as the number of degrees of unsaturation and the acyl carbon chain length. 
+
+| Phospholipid class     | Tentative ID | Molecular Formula | m/z [M+H]+ | RMT (Melatonin) | Potential Isomers or Isobars? |
+|--------------------------|--------------|-------------------|------------|-----------------|-------------------------------|
+| Phosphatidylcholine      | PC (16:0)    | C24H51NO7P        | 496.3398   | 0.944985766     | PE (19:0)                     |
+| Phosphatidylcholine      | PC (18:2)    | C26H51NO7P        | 520.3398   | 0.946516797     |                               |
+| Phosphatidylcholine      | PC (18:1)    | C26H49NO7P        | 522.3554   | 0.946385876     |                               |
+| Phosphatidylcholine      | PC (18:0)    | C26H55NO7P        | 524.3711   | 0.946707767     | PE (21:0)                     |
+| Phosphatidylcholine      | PC (20:5)    | C28H49NO7P        | 542.3241   | 0.947873682     |                               |
+| Phosphatidylcholine      | PC (20:4)    | C28H51NO7P        | 544.3398   | 0.948075748     |                               |
+| Phosphatidylcholine      | PC (20:3)    | C28H53NO7P        | 546.3554   | 0.948421117     |                               |
+| Phosphatidylcholine      | PC (22:6)    | C30H51NO7P        | 568.3398   | 0.949017098     |                               |
+| Phosphatidylcholine      | PC (30:0)    | C38H77NO8P        | 706.5381   | 0.955023257     | PE (33:0)                     |
+| Phosphatidylcholine      | PC (O-32:0)  | C40H83NO7P        | 720.5902   | 0.956032035     | PE (O-35:0)                   |
+| Phosphatidylcholine      | PC (32:2)    | C40H77NO8P        | 730.5381   | 0.957678552     | PE (35:2)                     |
+| Phosphatidylcholine      | PC (32:1)    | C40H79NO8P        | 732.5538   | 0.957850433     | PE (35:1)                     |
+| Phosphatidylcholine      | PC (32:0)    | C40H81NO8P        | 734.5694   | 0.957744551     | PE (35:0)                     |
+| Phosphatidylcholine      | PC (32:2)    | C42H83NO7P        | 744.5902   | 0.956616481     | PE (35:2)                     |
+| Phosphatidylcholine      | PC (34:3)    | C42H79NO8P        | 756.5538   | 0.958803383     | PE (37:3)                     |
+| Phosphatidylcholine      | PC (34:2)    | C42H81NO8P        | 758.5694   | 0.959387339     | PE (37:2)                     |
+| Phosphatidylcholine      | PC (34:1)    | C42H83NO8P        | 760.5851   | 0.959712373     | PE (37:0)                     |
+| Phosphatidylcholine      | PC (O-36:5)  | C44H81NO7P        | 766.5745   | 0.957608892     |                               |
+| Phosphatidylcholine      | PC (O-36:4)  | C44H83NO7P        | 768.5902   | 0.958565696     |                               |
+| Phosphatidylcholine      | PC (35:2)    | C43H83NO8P        | 772.5851   | 0.958842668     | PE (38:2)                     |
+| Phosphatidylcholine      | PC (36:6)    | C44H77NO8P        | 778.5382   | 0.960401611     | PE (39:6)                     |
+| Phosphatidylcholine      | PC (36:5)    | C44H79NO8P        | 780.5538   | 0.959981423     | PE (39:5)                     |
+| Phosphatidylcholine      | PC (36:4)    | C44H81NO8P        | 782.5695   | 0.960115228     | PE (39:4)                     |
+| Phosphatidylcholine      | PC (36:3)    | C44H83NO8P        | 784.5851   | 0.960915665     | PE (39:3)                     |
+| Phosphatidylcholine      | PC (36:2)    | C44H85NO8P        | 786.6008   | 0.961966298     | PE (39:2)                     |
+| Phosphatidylcholine      | PC (36:1)    | C44H87NO8P        | 788.6164   | 0.958657777     | PE (39:1)                     |
+| Phosphatidylcholine      | PC (38:5)    | C46H85NO7P        | 794.6058   | 0.958591294     |                               |
+| Phosphatidylcholine      | PC (O-38:4)  | C46H87NO7P        | 796.6215   | 0.961642956     |                               |
+| Phosphatidylcholine      | PC (38:6)    | C46H81NO8P        | 806.5694   | 0.962075535     | PE (41:6)                     |
+| Phosphatidylcholine      | PC (38:5)    | C46H83NO8P        | 808.5851   | 0.961401103     | PE (41:5)                     |
+| Phosphatidylcholine      | PC (38:4)    | C46H85NO8P        | 810.6007   | 0.96123333      | PE (41:4)                     |
+| Phosphatidylcholine      | PC (38:3)    | C46H87NO8P        | 812.6164   | 0.961979988     | PE (41:3)                     |
+| Phosphatidylcholine      | PC (P-38:6)  | C48H85NO7P        | 818.6058   | 0.962841838     |                               |
+| Phosphatidylcholine      | PC (39:4)    | C47H87NO8P        | 824.6164   | 0.961901364     | PE (42:4)                     |
+| Phosphatidylcholine      | PC (40:7)    | C48H83NO8P        | 832.5851   | 0.962875054     |                               |
+| Phosphatidylcholine      | PC (40:6)    | C48H85NO8P        | 834.6007   | 0.962604724     | PE (43:6)                     |
+| Phosphatidylcholine      | PC (40:5)    | C48H87NO8P        | 836.6164   | 0.963933666     |                               |
+| Phosphatidylcholine      | PC (38:7)    | C46H79NO8P        | 804.5538   | 0.963987843     | PE (41:7)                     |
+| Phosphatidylethanolamine | PE (16:0)    | C21H45NO7P        | 454.2928   | 0.969615192     | PC (13:0)                     |
+| Phosphatidylethanolamine | PE (18:2)    | C23H45NO7P        | 478.2928   | 0.974579377     |                               |
+| Phosphatidylethanolamine | PE (18:1)    | C23H47NO7P        | 480.3085   | 0.974579377     |                               |
+| Phosphatidylethanolamine | PE (20:5)    | C25H43NO7P        | 500.2772   | 0.97514576      |                               |
+| Phosphatidylethanolamine | PE (20:4)    | C25H45NO7P        | 502.2928   | 0.97514576      |                               |
+| Phosphatidylethanolamine | PE (22:6)    | C27H45NO7P        | 526.2928   | 0.982875229     |                               |
+| Phosphatidylethanolamine | PE (36:2)    | C41H79NO8P        | 744.5538   | 0.982875229     | PC (33:2)                     |
+| Phosphatidylethanolamine | PE (36:1)    | C41H81NO8P        | 746.5695   | 0.982875229     | PC (33:1)                     |
+| Phosphatidylethanolamine | PE (O-40:5)  | C45H83NO7P        | 780.5902   | 0.979576878     |                               |
+| Phosphatidylethanolamine | PE (40:6)    | C45H79HO8P        | 792.5539   | 0.983974679     | PC (37:6)                     |
+| Phosphatidylethanolamine | PE (40:5)    | C45H81NO8P        | 794.5695   | 0.984541063     | PC (37:5)                     |
+| Sphingomyelin            | SM (d33:1)   | C38H78N2O6P       | 689.5592   | 0.93890476      | PE-Cer(d36:1)                 |
+| Sphingomyelin            | SM (d34:2)   | C39H78N2O6P       | 701.5592   | 0.939489898     | PE-Cer(d37:2)                 |
+| Sphingomyelin            | SM (d37:1)   | C42H86N2O6P       | 745.6218   | 0.946339449     | PE-Cer(d40:1)                 |
+| Sphingomyelin            | SM (d40:2)   | C45H90N2O6P       | 785.6531   | 0.944618456     |                               |
+| Sphingomyelin            | SM (d40:1)   | C45H92N2O6P       | 787.6688   | 0.950917289     |                               |
+| Sphingomyelin            | SM (d41:1)   | C46H94N2O6P       | 801.6844   | 0.953188999     |                               |
+| Sphingomyelin            | SM (d42:3)   | C47H92N2O6P       | 811.6687   | 0.945754311     |                               |
+| Sphingomyelin            | SM (d42:0)   | C47H94N2O6P       | 813.6844   | 0.946924586     |                               |
+
+## Conclusions and Future Work
+
+To conclude, this work details for the first time, the ongoing development of a high-throughput method to detect various phospholipid species from biological specimens via a simple derivatization procedure when using MSI-NACE-MS in acidic conditions. Fixing a permanent positive charge on the zwitterionic species via methylation of their phosphoric acid residues demonstrates excellent resolution from neutral interferences during NACE based separations. In addition, MSI enables for an untargeted workflow using signal pattern recognition techniques as additional filters to screen for lipids in a pooled human serum sample. MSI was applied to facilitate rapid screening of potential lipid features, as well as for supplementing lipid subclass identifications. Overall this work serves as the foundation for high-throughput lipid profiling of biological specimens using MSI-NACE-MS, utilizing signal pattern recognition techniques as a mean of accelerating feature identification and overcoming ambiguities that plague the realm of data processing. Future work will involve primarily optimizing the reaction conditions as a means of achieving quantitative derivatization yields before application to a small study. In addition, a simple back wash of the by-product of the MTT reaction will be investigated to remove this interference from causing ion suppression effects.
+
+Overall, the project will transition to being used in conjunction with other methods to expand on our previous work on cystic fibrosis by maximizing the use of a single neonatal dried blood spot. Following a liquid-liquid extraction involving MTBE to extract both hydrophilic and hydrophobic metabolites, will be analyzed in both aqueous and nonaqueous modes to expand the metabolite panel and uncover lipid signatures of newborns with cystic fibrosis.
